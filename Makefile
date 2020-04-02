@@ -42,7 +42,7 @@ OBJS= head.pre.o reloc.o main.o test.o init.o lib.o patn.o screen_buffer.o \
       config.o cpuid.o coreboot.o pci.o memsize.o spd.o error.o dmi.o controller.o \
       smp.o vmem.o random.o multiboot.o
 
-all: clean memtest.bin memtest
+all: clean memtest.bin memtest.img memtest
 
 # Link it statically once so I know I don't have undefined
 # symbols and then link it dynamically so I have full
@@ -71,6 +71,10 @@ memtest.bin: memtest_shared.bin bootsect.pre.o setup.pre.o memtest.bin.lds
 	$(LD) -T memtest.bin.lds bootsect.pre.o setup.pre.o -b binary \
 	memtest_shared.bin -o memtest.bin
 
+memtest.img: memtest.bin
+	dd status=noxfer conv=notrunc iflag=nocache bs=512 count=2880 if=/dev/zero of=./memtest.img
+	dd status=noxfer conv=notrunc iflag=nocache if=./memtest.bin of=./memtest.img
+
 reloc.o: reloc.c
 	$(CC) -c $(CFLAGS) -fno-strict-aliasing reloc.c
 
@@ -85,8 +89,8 @@ build_number:
 	sh make_buildnum.sh
 
 clean:
-	rm -f *.o *.pre.s *.iso memtest.bin memtest memtest_shared \
-		memtest_shared.bin memtest.iso
+	rm -f *.o *.pre.s *.iso memtest.bin memtest.img memtest \
+		memtest_shared memtest_shared.bin memtest.iso
 
 iso:
 	make all
